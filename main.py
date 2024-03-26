@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List, Optional
+from datetime import datetime
 
 app = FastAPI()
 
@@ -10,6 +11,13 @@ class Book(BaseModel):
     author: str
     description: Optional[str]
     published_year: int
+    
+    @validator("published_year")
+    def checkFutureDate(cls, publishedDate):
+        currentDate = datetime.now().year
+        if publishedDate > currentDate :
+            raise ValueError("Published Year is Later than Present Year!")
+        return publishedDate
 
 bookDB: List[Book] = []
 
