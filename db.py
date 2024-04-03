@@ -8,11 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 import hashlib
 
-engine = create_engine('sqlite:///./testdb.db', echo=True)
+async_engine = create_async_engine('sqlite+aiosqlite:///./testdb.db', echo=True)
 Base = declarative_base()
 
-Session = sessionmaker(bind=engine)
-session = Session()
+async_session = sessionmaker(bind=async_engine, class_=AsyncSession, expire_on_commit=False)
 
 class booklib(Base):
     __tablename__ = 'books'
@@ -30,8 +29,18 @@ class userdb(Base):
 
 Base.metadata.create_all(engine)
 
-session.add([])
-session.commit()
+
+
+app = FastAPI()
+
+@app.get("/books/", response_model=List[booklib])
+async def read_books():
+    async with async_session():
+        async with async_session().begin():
+            result = await session.execute(select(booklib))
+            books = result().scalars().all()
+            return books
+
 
 # CREATE
 hasher = hashlib.sha256()
